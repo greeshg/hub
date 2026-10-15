@@ -16,21 +16,21 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${DOCKER_IMAGE}:v1")
-                }
+                bat 'docker build -t %DOCKER_IMAGE%:v1 .'
             }
         }
 
         stage('Login and Push to Docker Hub') {
             steps {
-                script {
-                    docker.withRegistry(
-                        'https://index.docker.io/v1/',
-                        'dockerhub-creds'
-                    ) {
-                        docker.image("${DOCKER_IMAGE}:v1").push()
-                    }
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                    bat 'docker push %DOCKER_IMAGE%:v1'
                 }
             }
         }
